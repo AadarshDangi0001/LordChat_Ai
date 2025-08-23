@@ -1,5 +1,5 @@
 import { Server } from "socket.io";
-import {generateContent} from "../services/ai-service.js";
+import { generateContent } from "../services/ai-service.js";
 import cookie from "cookie";
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
@@ -12,38 +12,56 @@ function setupSocketServer(server) {
     }
   });
 
- io.use(  async  (socket, next) => {
+  io.use(async (socket, next) => {
     const cookies = cookie.parse(socket.handshake.headers?.cookie || '');
-    if(!cookies.token) {
+    if (!cookies.token) {
       return next(new Error("Authentication error"));
     }
     try {
-      
       const decoded = jwt.verify(cookies.token, process.env.JWT_SECRET);
       const user = await userModel.findById(decoded.id);
-      socket.user= user
+      socket.user = user;
       next();
-
     } catch (error) {
       return next(new Error("Authentication error"));
-      
     }
-    
-    next();
   });
 
   io.on("connection", (socket) => {
-    console.log("A user connected");
-
-    socket.on("ai-message", async (message) => {
-       const result = await generateContent(message);
+    socket.on("ai-message", async (messagePayload) => {
+      try {
+        
+        
+        
+        let parsedPayload;
+        if (typeof messagePayload === 'string') {
+          parsedPayload = JSON.parse(messagePayload);
+        } else {
+          parsedPayload = messagePayload;
+        }
+        
+       
+        const { content, chat } = parsedPayload;
       
-         socket.emit("ai-message-response", result);
-
-      });
+        const result = await generateContent(content);
+        
+       
+        socket.emit("ai-response", {
+          message: result,
+          chat: chat 
+        });
+        
+      } catch (error) {
+        console.error("Error processing AI message:", error);
+        socket.emit("ai-error", {
+          error: "Failed to generate AI response",
+          chat: parsedPayload?.chat || messagePayload?.chat
+        });
+      }
+    });
 
     socket.on("disconnect", () => {
-      console.log("A user disconnected");
+      console.log("User disconnected:", socket.user?.email);
     });
   });
 
