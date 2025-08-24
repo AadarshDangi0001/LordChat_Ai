@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 import messageModel from "../models/message.model.js";
 import { createMemory, queryMemory } from "../services/vector.service.js";
-import { response } from "express";
+
 
 function setupSocketServer(server) {
   const io = new Server(server, {
@@ -87,14 +87,26 @@ function setupSocketServer(server) {
             .lean()
         ).reverse();
 
-
-        const result = await generateContent(
-          chatHistory.map((msg) => {
+        const shortTermMemory =chatHistory.map((msg) => {
             return {
               role: msg.role,
               parts: [{ text: msg.content }],
             };
           })
+
+        const longTermMemory = [
+          {role:"user",
+            parts:[{text:`these are some previous messages from the chat ,use them to generate a response
+                ${memory.map(item=>item.metadata.text).join("\n")}
+              `}]
+          }
+          ]
+          
+
+
+
+        const result = await generateContent(
+          [ ...longTermMemory,...shortTermMemory]
         );
 
 
