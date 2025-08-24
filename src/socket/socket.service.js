@@ -65,7 +65,9 @@ function setupSocketServer(server) {
         const memory = await queryMemory({
           queryVector:vectors,
           limit:3,
-          metadata:{}
+          metadata:{
+            user:socket.user._id
+          }
         })
 
         await createMemory({
