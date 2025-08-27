@@ -11,7 +11,10 @@ import chatRouter from './routes/chats.route.js';
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",   // frontend origin
+  credentials: true                  // allow cookies/credentials
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

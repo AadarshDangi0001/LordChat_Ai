@@ -8,10 +8,11 @@ import { createMemory, queryMemory } from "../services/vector.service.js";
 
 function setupSocketServer(server) {
   const io = new Server(server, {
-    cors: {
-      origin: "*",
-      methods: ["GET", "POST"],
-    },
+      cors: {
+    origin: "http://localhost:5173", // your frontend
+    methods: ["GET", "POST"],
+    credentials: true
+  }
   });
 
   io.use(async (socket, next) => {
